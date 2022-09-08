@@ -1,4 +1,4 @@
-use std::process;
+use std::{env, process};
 
 use audio::Player;
 
@@ -10,8 +10,14 @@ async fn main() {
         eprintln!("Error occured: {err}");
         process::exit(1);
     });
-    player.play(url, 64_000).await.unwrap_or_else(|err| {
-        eprintln!("Error occured: {err}");
-        process::exit(1);
-    });
+    player
+        .play(
+            &env::var("URL").unwrap_or_else(|_| "invalid".to_string()),
+            100_000,
+        )
+        .await
+        .unwrap_or_else(|err| {
+            eprintln!("Error occured: {err}");
+            process::exit(1);
+        });
 }

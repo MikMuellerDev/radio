@@ -1,7 +1,8 @@
 use bytes::{BufMut, BytesMut};
+use core::time;
 use futures_util::StreamExt;
 use rodio::{decoder::DecoderError, DevicesError, OutputStream, PlayError, Sink, StreamError};
-use std::{fmt::Display, io::Cursor};
+use std::{fmt::Display, io::Cursor, time::SystemTime};
 
 pub struct Player;
 
@@ -66,7 +67,7 @@ impl Player {
         Ok(Self {})
     }
 
-    pub async fn play(&self, url: &str, mut chunk_size: usize) -> Result<(), Error> {
+    pub async fn play(&self, url: &str, chunk_size: usize) -> Result<(), Error> {
         let (_stream, stream_handle) = OutputStream::try_default()?;
         let sink = Sink::try_new(&stream_handle).unwrap();
 
@@ -76,10 +77,9 @@ impl Player {
         let mut buffer: BytesMut = BytesMut::with_capacity(chunk_size);
 
         while let Some(current_chunk) = stream.next().await {
-            println!("{}", sink.len());
+            println!("{}: {:?}", sink.len(), SystemTime::now());
             if sink.len() == 0 {
-                eprintln!("Reducing chunk size due to bad network..");
-                chunk_size = 48_000;
+                eprintln!("WARNING: no cached chunks");
             }
 
             // Check if the buffer has reached the chunk_size
