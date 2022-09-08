@@ -67,7 +67,9 @@ impl Player {
         Ok(Self {})
     }
 
-    pub async fn play(&self, url: &str, chunk_size: usize) -> Result<(), Error> {
+    pub async fn play(&self, url: &str) -> Result<(), Error> {
+        let chunk_size = 64_000;
+
         let (_stream, stream_handle) = OutputStream::try_default()?;
         let sink = Sink::try_new(&stream_handle).unwrap();
 
