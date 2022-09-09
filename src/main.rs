@@ -1,5 +1,5 @@
-use std::{env, process, time::Duration};
 use std::thread;
+use std::{env, process, time::Duration};
 
 use audio::Player;
 

@@ -1,6 +1,9 @@
-use std::{fmt::Display, thread, time::Duration, collections::HashMap};
+use std::{collections::HashMap, fmt::Display};
 
-use libmpv::{Mpv, FileState, events::{Event, PropertyData}, Format, MpvNode};
+use libmpv::{
+    events::{Event, PropertyData},
+    FileState, Format, Mpv, MpvNode,
+};
 
 pub enum Error {
     Mpv(libmpv::Error),
@@ -45,9 +48,9 @@ impl Player {
 
         crossbeam::scope(|scope| {
             scope.spawn(|_| {
-                self.mpv.playlist_load_files(&[(&url, FileState::AppendPlay, None)])
+                self.mpv
+                    .playlist_load_files(&[(url, FileState::AppendPlay, None)])
                     .unwrap();
-
 
                 // Trigger `Event::EndFile`.
                 //self.mpv.playlist_next_force().unwrap();

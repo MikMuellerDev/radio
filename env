@@ -1,0 +1,2 @@
+#!/bin/sh
+export MPV_SOURCE=./mpv-build/
