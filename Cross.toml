@@ -1,4 +1,2 @@
-[build.env]
-passthrough = [
-    "MPV_SOURCE=./mpv-build/"
-]
+[target.arm-unknown-linux-musleabihf]
+dockerfile = "./Dockerfile"

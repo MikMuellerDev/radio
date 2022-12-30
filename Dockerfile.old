@@ -1,0 +1,8 @@
+FROM ghcr.io/cross-rs/armv7-unknown-linux-musleabihf
+
+RUN dpkg --add-architecture armhf && \
+    apt update
+
+RUN apt install -y libasound2:armhf libasound2-dev:armhf libc6:armhf libc6-dev:armhf librust-alsa-sys-dev:armhf
+RUN rm -rf /usr/lib/x86_64-linux-gnu/libc.a
+ENV RUSTFLAGS="-C link-arg=-L/usr/lib/arm-linux-gnueabihf/ -C link-arg=/usr/lib/arm-linux-gnueabihf/libc.so.6 -C link-arg=/usr/lib/arm-linux-gnueabihf/libm.so.6 -C link-arg=/usr/lib/arm-linux-gnueabihf/libdl.so.2 -C link-arg=/usr/lib/arm-linux-gnueabihf/libpthread.so.0 -C link-arg=/usr/lib/arm-linux-gnueabihf/ld-linux-armhf.so.3"
