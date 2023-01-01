@@ -1,0 +1,30 @@
+@use 'sass:color';
+@use '@material/theme/color-palette' as colors;
+
+$text-color: #fff;
+@use '@material/theme/index' as theme with (
+    $primary: colors.$purple-200,
+    $surface: #121212,
+    $background: #121212,
+    $on-surface: color.change($text-color, $alpha: 0.87),
+    $error: #cf6679
+);
+
+html,
+body {
+    background-color: theme.$background;
+    color: theme.$on-surface;
+}
+
+:root {
+    --clr-primary: #{theme.$primary};
+    --clr-error: #{theme.$error};
+    --clr-text: #{theme.$on-surface};
+    --clr-text-hint: #{color.change($text-color, $alpha: 0.6)};
+    --clr-text-disabled: #{color.change($text-color, $alpha: 0.38)};
+    --clr-warn: #{colors.$yellow-400};
+    --clr-success: #{colors.$light-green-a200};
+    --clr-priority-low: #{colors.$grey-600};
+    --clr-priority-medium: #{colors.$light-blue-a200};
+    color-scheme: dark;
+}

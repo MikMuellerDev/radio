@@ -1,88 +1,80 @@
-use actix_web::{post, web, App, HttpResponse, HttpServer, Responder};
+use std::path::PathBuf;
+
+use actix_files::Files;
+use actix_identity::IdentityMiddleware;
+use actix_session::{storage::CookieSessionStore, SessionMiddleware};
+use actix_web::{cookie::Key, web::Data, App, HttpServer};
 use anyhow::Context;
-use audio::Error;
-use serde::{Deserialize, Serialize};
+use config::Config;
+use env_logger::Env;
 use tokio::sync::Mutex;
 
-// TODO: place under `audio` module
 mod audio;
+mod config;
 mod decoder;
+mod routes;
 
 use crate::audio::Player;
 
 #[macro_use]
 extern crate log;
 
-struct State {
+pub(crate) struct State {
     player: Mutex<Player>,
-}
-
-#[derive(Deserialize)]
-struct PlayRequest {
-    url: String,
-}
-
-#[derive(Serialize)]
-struct Response {
-    message: &'static str,
-    error: Option<String>,
-}
-
-impl Response {
-    fn err(message: &'static str, error: String) -> Self {
-        Self {
-            message,
-            error: Some(error),
-        }
-    }
-
-    fn ok(message: &'static str) -> Self {
-        Self {
-            message,
-            error: None,
-        }
-    }
-}
-
-#[post("/play")]
-async fn play(data: web::Data<State>, request: web::Json<PlayRequest>) -> impl Responder {
-    let mut player = data.player.lock().await;
-
-    match player.play(request.url.clone()).await {
-        Ok(_) => HttpResponse::Ok().json(Response::ok("started playback")),
-        Err(err) => HttpResponse::ServiceUnavailable()
-            .json(Response::err("could not start playback", err.to_string())),
-    }
-}
-
-#[post("/stop")]
-async fn stop(data: web::Data<State>) -> impl Responder {
-    let mut player = data.player.lock().await;
-    match player.stop() {
-        Ok(_) => HttpResponse::Ok().json(Response::ok("stopped playing")),
-        Err(err @ Error::NotPlaying) => HttpResponse::BadRequest()
-            .json(Response::err("could not stop the player", err.to_string())),
-        Err(err) => HttpResponse::ServiceUnavailable()
-            .json(Response::err("could not stop the player", err.to_string())),
-    }
+    config: Config,
 }
 
 #[actix_web::main]
 async fn main() -> anyhow::Result<()> {
-    env_logger::init();
+    //env_logger::init();
+    env_logger::Builder::from_env(Env::default().default_filter_or("info")).init();
 
-    let data = web::Data::new(State {
+    let config_path = "./config.toml";
+    let config = match config::read(&PathBuf::from(config_path))
+        .with_context(|| format!("could not read or create config file at `{config_path}`"))?
+    {
+        Some(config) => {
+            info!("Found existing config file at `{config_path}`");
+            config
+        }
+        None => {
+            info!("Created a new configuration file at `{config_path}`");
+            warn!("Canceling startup due to missing configuration");
+            return Ok(());
+        }
+    };
+
+    let key = Key::from(config.session_key.as_bytes());
+    let port = config.port;
+
+    let data = Data::new(State {
         player: Mutex::new(Player::new()?),
+        config,
     });
 
     HttpServer::new(move || {
         App::new()
+            .wrap(IdentityMiddleware::default())
+            .wrap(SessionMiddleware::new(
+                CookieSessionStore::default(),
+                key.clone(),
+            ))
             .app_data(data.clone())
-            .service(play)
-            .service(stop)
+            .service(Files::new("/assets", "./radio-web/dist/assets/"))
+            .service(Files::new("/images", "./images"))
+            // HTML endpoints
+            .service(routes::get_dash)
+            .service(routes::get_settings)
+            .service(routes::get_login)
+            // API endpoints
+            .service(routes::post_login)
+            .service(routes::logout)
+            .service(routes::get_stations)
+            .service(routes::post_play)
+            .service(routes::post_stop)
     })
-    .bind(("0.0.0.0", 8080))
-    .with_context(|| "cold not start webserver")?
+    .bind(("0.0.0.0", port))
+    .with_context(|| "could not start webserver")?
     .run()
     .await
     .with_context(|| "cold not start webserver")?;

@@ -1,0 +1,100 @@
+<script lang="ts">
+    import TopAppBar, { Row, Section, Title, AutoAdjust } from '@smui/top-app-bar'
+    import IconButton from '@smui/icon-button'
+
+    import Drawer, { AppContent, Content, Header, Subtitle, Scrim } from '@smui/drawer'
+    import { Item, Text, Graphic } from '@smui/list'
+
+    let topAppBar: TopAppBar
+    let open = false
+    let active = 'dash'
+
+    function setActive(value: string) {
+        active = value
+        open = false
+    }
+</script>
+
+<TopAppBar bind:this={topAppBar} variant="standard">
+    <Row>
+        <Section>
+            <IconButton class="material-icons" on:click={() => (open = !open)}>menu</IconButton>
+            <Title>Radio</Title>
+        </Section>
+        <Section align="end" toolbar>
+            <IconButton class="material-icons" aria-label="Download">file_download</IconButton>
+            <IconButton class="material-icons" aria-label="Print this page">print</IconButton>
+            <IconButton class="material-icons" aria-label="Bookmark this page">bookmark</IconButton>
+        </Section>
+    </Row>
+</TopAppBar>
+
+<AppContent class="app-content">
+    <AutoAdjust {topAppBar}>
+        <div class="drawer-container">
+            <Drawer variant="modal" fixed={true} bind:open>
+                <Header>
+                    <br />
+                    <Title>Radio</Title>
+                    <Subtitle>An internet radio written in Rust</Subtitle>
+                </Header>
+                <Content>
+                    <div class="drawer-items">
+                        <div>
+                            <Item
+                                href="/dash"
+                                activated={active === 'dash'}
+                            >
+                                <Graphic class="material-icons" aria-hidden="true">home</Graphic>
+                                <Text>Home</Text>
+                            </Item>
+                            <Item
+                                href="/settings"
+                                activated={active === 'settings'}
+                            >
+                                <Graphic class="material-icons" aria-hidden="true">settings</Graphic
+                                >
+                                <Text>Settings</Text>
+                            </Item>
+                        </div>
+                        <div>
+                            <Item
+                                href="/logout"
+                                activated={active === 'logout'}
+                            >
+                                <Graphic class="material-icons" aria-hidden="true">logout</Graphic>
+                                <Text>Logout</Text>
+                            </Item>
+                        </div>
+                    </div>
+                </Content>
+            </Drawer>
+            <Scrim fixed={true} />
+        </div>
+    </AutoAdjust>
+
+    <main class="main-content">
+        <pre class="status">Active: {active}</pre>
+    </main>
+</AppContent>
+
+<style lang="scss">
+    /* Hide everything above the top app bar. */
+    :global(#smui-app),
+    :global(body),
+    :global(html) {
+        display: block !important;
+        height: auto !important;
+        width: auto !important;
+        position: static !important;
+        margin: 0;
+    }
+
+    .drawer-items {
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        height: calc(100vh - 11rem);
+        padding: 1rem 0;
+    }
+</style>

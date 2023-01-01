@@ -1,0 +1,11 @@
+port = 8080
+session_key = "my_super_secret_session_key_which_must_be_over_64_characters_in_length"
+
+[[users]]
+username = "admin"
+password = "secret"
+
+[[stations]]
+url = "https://example.com/stream"
+name = "Example Radio"
+image_file = "example.png"
