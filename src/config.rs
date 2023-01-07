@@ -1,5 +1,6 @@
 use anyhow::{bail, Ok, Result};
 use std::{
+    collections::HashSet,
     fs::{self, File},
     io::Write,
     path::{Path, PathBuf},
@@ -23,8 +24,10 @@ pub struct User {
 
 #[derive(Serialize, Deserialize)]
 pub struct Station {
-    pub url: String,
+    pub id: String,
     pub name: String,
+    pub description: String,
+    pub url: String,
     pub image_file: PathBuf,
 }
 
@@ -40,7 +43,12 @@ pub fn read(path: &Path) -> Result<Option<Config>> {
             if config.stations.is_empty() {
                 bail!("no stations configured: there must be at least one stations")
             }
+
+            let mut station_ids = HashSet::new();
             for station in &config.stations {
+                if !station_ids.insert(&station.id) {
+                    bail!("duplicate station ID `{} ", station.id)
+                }
                 let path = PathBuf::from("./images").join(&station.image_file);
                 if !path.exists() {
                     bail!(

@@ -6,6 +6,8 @@ username = "admin"
 password = "secret"
 
 [[stations]]
-url = "https://example.com/stream"
+id = "example_unique_id"
 name = "Example Radio"
+description = "This fictional radio station serves as an example."
+url = "https://example.com/stream"
 image_file = "example.png"

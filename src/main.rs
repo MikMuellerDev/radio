@@ -20,13 +20,13 @@ use crate::audio::Player;
 extern crate log;
 
 pub(crate) struct State {
+    curr_station_id: Option<String>,
     player: Mutex<Player>,
     config: Config,
 }
 
 #[actix_web::main]
 async fn main() -> anyhow::Result<()> {
-    //env_logger::init();
     env_logger::Builder::from_env(Env::default().default_filter_or("info")).init();
 
     let config_path = "./config.toml";
@@ -48,6 +48,7 @@ async fn main() -> anyhow::Result<()> {
     let port = config.port;
 
     let data = Data::new(State {
+        curr_station_id: None,
         player: Mutex::new(Player::new()?),
         config,
     });

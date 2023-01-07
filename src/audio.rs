@@ -1,11 +1,11 @@
 use rodio::{decoder::DecoderError, DevicesError, OutputStream, PlayError, StreamError};
-use thiserror::Error;
 use std::{
     fmt::Display,
     sync::mpsc::{self, Receiver, Sender, TryRecvError},
     thread,
     time::Duration,
 };
+use thiserror::Error;
 
 use crate::decoder::{Mp3Error, Mp3StreamDecoder};
 
