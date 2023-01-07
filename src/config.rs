@@ -22,7 +22,7 @@ pub struct User {
     pub password: String,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Clone)]
 pub struct Station {
     pub id: String,
     pub name: String,
@@ -31,40 +31,47 @@ pub struct Station {
     pub image_file: PathBuf,
 }
 
+impl Config {
+    fn validate(&self) -> Result<()> {
+        let key_len = self.session_key.len();
+        if key_len < 64 {
+            bail!("insufficient key length: key must be >= 64 characters, found {key_len}",)
+        }
+        if self.stations.is_empty() {
+            bail!("no stations configured: there must be at least one stations")
+        }
+
+        let mut station_ids = HashSet::new();
+        for station in &self.stations {
+            if !station_ids.insert(&station.id) {
+                bail!("duplicate station ID `{} ", station.id)
+            }
+            let path = PathBuf::from("./images").join(&station.image_file);
+            if !path.exists() {
+                bail!(
+                    "station `{}` has an invalid image name: `{}`: path does not exist",
+                    station.name,
+                    station.image_file.to_string_lossy()
+                )
+            }
+            if !path.is_file() {
+                bail!(
+                    "station `{}` has an invalid image path: `{}`: path is not a file",
+                    station.name,
+                    station.image_file.to_string_lossy()
+                )
+            }
+        }
+        Ok(())
+    }
+}
+
 pub fn read(path: &Path) -> Result<Option<Config>> {
     match path.exists() {
         true => {
             let raw_config = fs::read_to_string(path)?;
             let config = toml::from_str::<Config>(&raw_config)?;
-            let key_len = config.session_key.len();
-            if key_len < 64 {
-                bail!("insufficient key length: key must be >= 64 characters, found {key_len}",)
-            }
-            if config.stations.is_empty() {
-                bail!("no stations configured: there must be at least one stations")
-            }
-
-            let mut station_ids = HashSet::new();
-            for station in &config.stations {
-                if !station_ids.insert(&station.id) {
-                    bail!("duplicate station ID `{} ", station.id)
-                }
-                let path = PathBuf::from("./images").join(&station.image_file);
-                if !path.exists() {
-                    bail!(
-                        "station `{}` has an invalid image name: `{}`: path does not exist",
-                        station.name,
-                        station.image_file.to_string_lossy()
-                    )
-                }
-                if !path.is_file() {
-                    bail!(
-                        "station `{}` has an invalid image path: `{}`: path is not a file",
-                        station.name,
-                        station.image_file.to_string_lossy()
-                    )
-                }
-            }
+            config.validate()?;
             Ok(Some(config))
         }
         false => {

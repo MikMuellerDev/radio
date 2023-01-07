@@ -24,8 +24,9 @@
     :global(.mdc-circular-progress.custom-progress),
     :global(.mdc-linear-progress.custom-progress) {
         opacity: 0;
-        &.visible {
-            opacity: 1;
-        }
+    }
+    :global(.mdc-linear-progress.custom-progress.visible),
+    :global(.mdc-circular-progress.custom-progress.visible) {
+        opacity: 1;
     }
 </style>

@@ -17,7 +17,6 @@ impl Display for Mp3Error {
             f,
             "{}",
             match self {
-                //Mp3Error::Eof => "encountered EOF",
                 Mp3Error::NotMp3 => "source data is not valid MP3",
             }
         )
@@ -43,17 +42,22 @@ where
     R: Read,
 {
     pub fn new(mut data: R) -> Result<Self, Mp3Error> {
-        if !is_mp3(data.by_ref()) {
-            return Err(Mp3Error::NotMp3);
-        }
-        let mut decoder = Decoder::new(data);
-        let current_frame = decoder.next_frame().unwrap();
+        match is_mp3(data.by_ref()) {
+            Ok(current_frame) => {
+                debug!("Stream is valid MP3, starting decoder");
+                let decoder = Decoder::new(data);
 
-        Ok(Self {
-            decoder,
-            current_frame,
-            current_frame_offset: 0,
-        })
+                Ok(Self {
+                    decoder,
+                    current_frame,
+                    current_frame_offset: 0,
+                })
+            }
+            Err(_) => {
+                debug!("Stream is not MP3, cannot decode");
+                Err(Mp3Error::NotMp3)
+            }
+        }
     }
 }
 
@@ -105,10 +109,14 @@ where
     }
 }
 
-fn is_mp3<R>(mut data: R) -> bool
+fn is_mp3<R>(mut data: R) -> Result<Frame, ()>
 where
     R: Read,
 {
     let mut decoder = Decoder::new(data.by_ref());
-    decoder.next_frame().is_ok()
+    let curr_frame = decoder.next_frame();
+    match curr_frame {
+        Ok(frame) => Ok(frame),
+        Err(_) => Err(()),
+    }
 }

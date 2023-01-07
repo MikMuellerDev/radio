@@ -25,3 +25,4 @@ minimp3 = "0.5.1"
 reqwest = { version = "0.11.13", default-features = false, features = ["rustls-tls", "stream", "blocking"] }
 rodio = { version = "0.16.0" }
 rustls = { version = "0.20.7" }
+serde_json = "1.0.91"
