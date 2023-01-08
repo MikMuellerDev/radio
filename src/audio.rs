@@ -8,6 +8,7 @@ use rodio::{
     DevicesError, OutputStream, OutputStreamHandle, PlayError, Sink, StreamError,
 };
 use std::{
+    cmp::Ordering,
     fmt::Display,
     sync::mpsc::{self, Receiver, Sender, TryRecvError},
     thread,
@@ -27,6 +28,7 @@ pub enum PlayerMsg {
 }
 
 const STREAM_CONNECT_TIMEOUT_SECS: u8 = 5;
+const VOLUME_TRANSITION_STEP_DELAY_MS: u64 = 12;
 
 pub struct Player {
     player_tx: Sender<PlayerMsg>,
@@ -146,23 +148,6 @@ fn output_stream_by_device_idx(idx: usize) -> Result<(OutputStream, OutputStream
     }
 }
 
-fn create_sink(
-    url: String,
-    default_volume: u8,
-    device_idx: usize,
-) -> Result<(Sink, OutputStream), Error> {
-    let stream = reqwest::blocking::get(url)?;
-
-    let source = Mp3StreamDecoder::new(stream)?;
-    let (_stream, stream_handle) = output_stream_by_device_idx(device_idx)?;
-
-    let sink = rodio::Sink::try_new(&stream_handle)?;
-    sink.set_volume(default_volume as f32 / 100.0);
-    sink.append(source);
-
-    Ok((sink, _stream))
-}
-
 impl Player {
     pub fn new(volume_percent: u8, alsa_device_idx: usize) -> Result<Self, Error> {
         let (terminate_tx, terminate_rx) = mpsc::channel();
@@ -234,7 +219,7 @@ impl Player {
         let device_idx = self.alsa_device_idx;
 
         thread::spawn(move || loop {
-            match create_sink(thread_url.clone(), player_volume, device_idx) {
+            match Self::create_sink(thread_url.clone(), player_volume, device_idx) {
                 Ok((sink, _output_handle)) => {
                     match outcome_tx.send(Ok(())) {
                         Ok(_) => trace!("Sent stream outcome to receiver"),
@@ -245,7 +230,9 @@ impl Player {
                             match station.auto_restart {
                                 // if the station supports auto restart, do not quit here
                                 true => {
-                                    debug!("Sink is empty, playback has ended: restarting stream...");
+                                    debug!(
+                                        "Sink is empty, playback has ended: restarting stream..."
+                                    );
                                     break;
                                 }
                                 // otherwise, send a signal and terminate this thread
@@ -260,12 +247,14 @@ impl Player {
                         }
                         match player_rx.try_recv() {
                             Ok(PlayerMsg::Stop) | Err(TryRecvError::Disconnected) => {
+                                Self::set_sink_volume_with_transition(&sink, 0.0);
                                 debug!("Player is terminating...");
                                 return;
                             }
                             Ok(PlayerMsg::SetVolume(volume)) => {
+                                let target_volume = volume as f32 / 100.0;
+                                Self::set_sink_volume_with_transition(&sink, target_volume);
                                 debug!("Set running sink volume to {volume}%");
-                                sink.set_volume(volume as f32 / 100.0)
                             }
                             Err(TryRecvError::Empty) => thread::sleep(Duration::from_millis(500)),
                         };
@@ -291,7 +280,6 @@ impl Player {
                     return Err(err);
                 }
                 Err(TryRecvError::Empty) if i == STREAM_CONNECT_TIMEOUT_SECS => {
-                    drop(outcome_rx);
                     return Err(Error::StreamConnectTimeout(STREAM_CONNECT_TIMEOUT_SECS));
                 }
                 Err(TryRecvError::Empty) => {
@@ -304,6 +292,49 @@ impl Player {
         }
 
         Ok(())
+    }
+
+    fn set_sink_volume_with_transition(sink: &Sink, target_volume: f32) {
+        let mut current_volume = sink.volume();
+
+        match current_volume.partial_cmp(&target_volume) {
+            Some(Ordering::Less) => {
+                while current_volume < target_volume {
+                    current_volume += 0.01;
+                    sink.set_volume(current_volume);
+                    thread::sleep(Duration::from_millis(VOLUME_TRANSITION_STEP_DELAY_MS));
+                }
+                sink.set_volume(target_volume);
+            }
+            Some(Ordering::Greater) => {
+                while current_volume > target_volume {
+                    current_volume -= 0.01;
+                    sink.set_volume(current_volume);
+                    thread::sleep(Duration::from_millis(VOLUME_TRANSITION_STEP_DELAY_MS));
+                }
+                sink.set_volume(target_volume);
+            }
+            Some(Ordering::Equal) | None => {}
+        }
+    }
+
+    fn create_sink(
+        url: String,
+        default_volume: u8,
+        device_idx: usize,
+    ) -> Result<(Sink, OutputStream), Error> {
+        let stream = reqwest::blocking::get(url)?;
+
+        let source = Mp3StreamDecoder::new(stream)?;
+        let (_stream, stream_handle) = output_stream_by_device_idx(device_idx)?;
+
+        let sink = rodio::Sink::try_new(&stream_handle)?;
+        sink.set_volume(0.0);
+        sink.append(source);
+
+        Self::set_sink_volume_with_transition(&sink, default_volume as f32 / 100.0);
+
+        Ok((sink, _stream))
     }
 
     pub fn stop(&mut self, send_signal: bool) -> Result<(), Error> {

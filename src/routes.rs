@@ -260,7 +260,7 @@ pub(crate) async fn get_dash(
 ) -> Result<HttpResponse, Error> {
     match user {
         Some(_) => Ok(NamedFile::open("./radio-web/dist/html/dash.html")?.into_response(&req)),
-        None => Ok(HttpResponse::Found()
+        None => Ok(HttpResponse::TemporaryRedirect()
             .append_header(("Location", "/login"))
             .finish()),
     }
@@ -273,7 +273,7 @@ pub(crate) async fn get_settings(
 ) -> Result<HttpResponse, Error> {
     match user {
         Some(_) => Ok(NamedFile::open("./radio-web/dist/html/settings.html")?.into_response(&req)),
-        None => Ok(HttpResponse::Found()
+        None => Ok(HttpResponse::TemporaryRedirect()
             .append_header(("Location", "/login"))
             .finish()),
     }
@@ -285,7 +285,7 @@ pub(crate) async fn get_login(
     req: HttpRequest,
 ) -> Result<HttpResponse, Error> {
     match user {
-        Some(_) => Ok(HttpResponse::Found()
+        Some(_) => Ok(HttpResponse::TemporaryRedirect()
             .append_header(("Location", "/"))
             .finish()),
         None => Ok(NamedFile::open("./radio-web/dist/html/login.html")?.into_response(&req)),

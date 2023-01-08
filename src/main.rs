@@ -2,8 +2,12 @@ use std::path::PathBuf;
 
 use actix_files::Files;
 use actix_identity::IdentityMiddleware;
-use actix_session::{storage::CookieSessionStore, SessionMiddleware};
-use actix_web::{cookie::Key, web::Data, App, HttpServer};
+use actix_session::{config::PersistentSession, storage::CookieSessionStore, SessionMiddleware};
+use actix_web::{
+    cookie::{time::Duration, Key},
+    web::Data,
+    App, HttpServer,
+};
 use anyhow::Context;
 use config::Config;
 use env_logger::Env;
@@ -66,10 +70,12 @@ async fn main() -> anyhow::Result<()> {
     let server = HttpServer::new(move || {
         App::new()
             .wrap(IdentityMiddleware::default())
-            .wrap(SessionMiddleware::new(
-                CookieSessionStore::default(),
-                key.clone(),
-            ))
+            .wrap(
+                SessionMiddleware::builder(CookieSessionStore::default(), key.clone())
+                    .cookie_secure(false) // required in order to allow HTTP sessions
+                    .session_lifecycle(PersistentSession::default().session_ttl(Duration::days(7)))
+                    .build(),
+            )
             .app_data(data.clone())
             .service(Files::new("/assets", "./radio-web/dist/assets/"))
             .service(Files::new("/images", "./images"))
