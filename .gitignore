@@ -10,7 +10,7 @@ Cargo.lock
 **/*.rs.bk
 
 # Files used during application development
-settings.json
+settings.toml
 config.toml
 images/*.png
 

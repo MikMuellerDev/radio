@@ -32,7 +32,7 @@ pub(crate) struct State {
 }
 
 const CONFIG_PATH: &str = "./config.toml";
-const SETTINGS_PATH: &str = "./settings.json";
+const SETTINGS_PATH: &str = "./settings.toml";
 
 #[actix_web::main]
 async fn main() -> anyhow::Result<()> {
