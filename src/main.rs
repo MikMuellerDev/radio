@@ -38,6 +38,9 @@ const SETTINGS_PATH: &str = "./settings.toml";
 async fn main() -> anyhow::Result<()> {
     env_logger::Builder::from_env(Env::default().default_filter_or("info")).init();
 
+    let settings = settings::read(&PathBuf::from(SETTINGS_PATH))
+        .with_context(|| format!("could not read or create settings file at `{SETTINGS_PATH}`"))?;
+
     let config = match config::read(&PathBuf::from(CONFIG_PATH))
         .with_context(|| format!("could not read or create config file at `{CONFIG_PATH}`"))?
     {
@@ -51,9 +54,6 @@ async fn main() -> anyhow::Result<()> {
             return Ok(());
         }
     };
-
-    let settings = settings::read(&PathBuf::from(SETTINGS_PATH))
-        .with_context(|| format!("could not read or create settings file at `{SETTINGS_PATH}`"))?;
 
     let key = Key::from(config.session_key.as_bytes());
     let port = config.port;
