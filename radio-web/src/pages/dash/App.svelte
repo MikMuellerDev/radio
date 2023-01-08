@@ -31,7 +31,6 @@
     }
 
     async function setVolume() {
-        console.log(volume)
         if (timer) clearTimeout(timer)
         timer = setTimeout(() => {
             fetch('/api/volume', {
@@ -138,6 +137,83 @@
 
 <Page pageId="dash">
     <div id="container">
+        <div id="container__other">
+            <div id="container__other__banner" class="mdc-elevation--z3">
+                <div id="container__other__banner__header">
+                    <span class="text-hint">Currently Playing</span>
+                    {#if currStation !== undefined}
+                        <IconButton href={currStation.url} target="_blank" class="material-icons"
+                            >open_in_new</IconButton
+                        >
+                    {/if}
+                </div>
+
+                <div id="container__other__banner__content">
+                    <div
+                        id="container__other__banner__img-div"
+                        class="mdc-elevation--z5"
+                        class:loading
+                        style={currStation === undefined
+                            ? ''
+                            : `background-image: url("/images/${currStation.image_file}")`}
+                    >
+                        <div id="container__other__banner__img-div__inner">
+                            {#if currStation !== undefined}
+                                <img
+                                    id="container__other__banner__img-div__inner__img"
+                                    alt="Logo of the current station"
+                                    src={`/images/${currStation.image_file}`}
+                                />
+                            {:else}
+                                <i class="material-icons">volume_off</i>
+                            {/if}
+                        </div>
+                    </div>
+
+                    <div id="container__other__banner__texts">
+                        {#if currStation !== undefined}
+                            <h6 class:text-disabled={loading}>{currStation.name}</h6>
+                            <span class:text-disabled={loading} class="text-hint"
+                                >{currStation.description}</span
+                            >
+                        {:else}
+                            <h6 class:text-disabled={loading}>Off</h6>
+                            <span class:text-disabled={loading} class="text-hint"
+                                >Nothing is playing</span
+                            >
+                        {/if}
+                    </div>
+                </div>
+            </div>
+            <div id="container__other__volume">
+                <span class="text-hint">Volume Control</span>
+                <div id="container__other__volume__container">
+                    <div id="container__other__volume__container__left">
+                        <FormField align="end" style="display: flex;">
+                            <Slider
+                                style="flex-grow: 1;"
+                                bind:value={volume}
+                                on:SMUISlider:change={setVolume}
+                            />
+                        </FormField>
+                    </div>
+                    <div id="container__other__volume__container__right">
+                        <span class="text-hint">{volume}%</span>
+                        <i class="material-icons">
+                            {#if volume === 0}
+                                volume_off
+                            {:else if volume < 33}
+                                volume_mute
+                            {:else if volume < 66}
+                                volume_down
+                            {:else}
+                                volume_up
+                            {/if}
+                        </i>
+                    </div>
+                </div>
+            </div>
+        </div>
         <div id="container__selection">
             <div id="container__selection__header">
                 <span class="text-hint">Select Station</span>
@@ -195,84 +271,6 @@
                 {/if}
             </List>
         </div>
-
-        <div id="container__right">
-            <div id="container__right__banner" class="mdc-elevation--z3">
-                <div id="container__right__banner__header">
-                    <span class="text-hint">Currently Playing</span>
-                    {#if currStation !== undefined}
-                        <IconButton href={currStation.url} target="_blank" class="material-icons"
-                            >open_in_new</IconButton
-                        >
-                    {/if}
-                </div>
-
-                <div id="container__right__banner__content">
-                    <div
-                        id="container__right__banner__img-div"
-                        class="mdc-elevation--z5"
-                        class:loading
-                        style={currStation === undefined
-                            ? ''
-                            : `background-image: url("/images/${currStation.image_file}")`}
-                    >
-                        <div id="container__right__banner__img-div__inner">
-                            {#if currStation !== undefined}
-                                <img
-                                    id="container__right__banner__img-div__inner__img"
-                                    alt="Logo of the current station"
-                                    src={`/images/${currStation.image_file}`}
-                                />
-                            {:else}
-                                <i class="material-icons">volume_off</i>
-                            {/if}
-                        </div>
-                    </div>
-
-                    <div id="container__right__banner__texts">
-                        {#if currStation !== undefined}
-                            <h6 class:text-disabled={loading}>{currStation.name}</h6>
-                            <span class:text-disabled={loading} class="text-hint"
-                                >{currStation.description}</span
-                            >
-                        {:else}
-                            <h6 class:text-disabled={loading}>Off</h6>
-                            <span class:text-disabled={loading} class="text-hint"
-                                >Nothing is playing</span
-                            >
-                        {/if}
-                    </div>
-                </div>
-            </div>
-            <div id="container__right__volume">
-                <span class="text-hint">Volume Control</span>
-                <div id="container__right__volume__container">
-                    <div id="container__right__volume__container__left">
-                        <FormField align="end" style="display: flex;">
-                            <Slider
-                                style="flex-grow: 1;"
-                                bind:value={volume}
-                                on:SMUISlider:change={setVolume}
-                            />
-                        </FormField>
-                    </div>
-                    <div id="container__right__volume__container__right">
-                        <span class="text-hint">{volume}%</span>
-                        <i class="material-icons">
-                            {#if volume === 0}
-                                volume_off
-                            {:else if volume < 33}
-                                volume_mute
-                            {:else if volume < 66}
-                                volume_down
-                            {:else}
-                                volume_up
-                            {/if}
-                        </i>
-                    </div>
-                </div>
-            </div>
-        </div>
     </div>
 </Page>
 
@@ -318,7 +316,7 @@
             }
         }
 
-        &__right {
+        &__other {
             width: 40%;
             display: flex;
             flex-direction: column;
@@ -326,6 +324,10 @@
 
             @include not-widescreen {
                 width: 100%;
+            }
+
+            @include mobile {
+                flex-direction: column-reverse;
             }
 
             &__banner {
@@ -350,7 +352,7 @@
 
                     @include not-widescreen {
                         margin-top: 1rem;
-                        gap: 2rem;
+                        gap: 1rem;
                         flex-direction: column;
                         align-items: center;
                     }
@@ -366,6 +368,11 @@
 
                     &.loading {
                         filter: grayscale(100);
+                    }
+
+                    @include mobile {
+                        width: 7rem;
+                        height: 7rem;
                     }
 
                     &__inner {
@@ -398,6 +405,11 @@
 
                     h6 {
                         margin: 0.5rem 0;
+
+                        @include mobile {
+                            margin-bottom: 0.1rem;
+                            font-size: 1.1rem;
+                        }
                     }
                     span {
                         font-size: 0.9rem;

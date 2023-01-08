@@ -1,0 +1,19 @@
+{
+    "background_color": "black",
+    "theme_color": "indigo",
+    "orientation": "any",
+    "lang": "en-US",
+    "categories": ["multimedia"],
+    "description": "An internet radio written in Rust",
+    "display": "standalone",
+    "icons": [
+      {
+        "src": "/assets/logo.png",
+        "sizes": "192x192",
+        "type": "image/png"
+      }
+    ],
+    "name": "Radio",
+    "short_name": "Radio",
+    "start_url": "/"
+}
