@@ -78,8 +78,9 @@ pub(crate) async fn logout(user: Identity) -> Result<HttpResponse, Error> {
 #[post("/api/login")]
 pub(crate) async fn post_login(
     request: HttpRequest,
-    user: Option<Identity>,
     body: Json<LoginReq>,
+    data: Data<State>,
+    user: Option<Identity>,
 ) -> Result<HttpResponse, Error> {
     match user {
         Some(identity) => {
@@ -92,8 +93,12 @@ pub(crate) async fn post_login(
         None => debug!("logging in: no user logged in"),
     };
 
-    // validate credentials here
-    if body.username == "admin" && body.password == "pw" {
+    if data
+        .config
+        .users
+        .iter()
+        .any(|user| user.username == body.username && user.password == body.password)
+    {
         Identity::login(&request.extensions(), body.username.clone()).unwrap();
         Ok(HttpResponse::Ok().json(GenericResponse::ok("successfully logged in")))
     } else {

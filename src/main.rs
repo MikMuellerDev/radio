@@ -63,7 +63,7 @@ async fn main() -> anyhow::Result<()> {
         settings: Mutex::new(settings),
     });
 
-    HttpServer::new(move || {
+    let server = HttpServer::new(move || {
         App::new()
             .wrap(IdentityMiddleware::default())
             .wrap(SessionMiddleware::new(
@@ -89,11 +89,17 @@ async fn main() -> anyhow::Result<()> {
             .service(routes::post_device)
             .service(routes::get_device)
     })
-    .bind(("0.0.0.0", port))
-    .with_context(|| "could not start webserver")?
-    .run()
-    .await
-    .with_context(|| "cold not start webserver")?;
+    .bind(("::0", port))
+    .with_context(|| "could not start webserver")?;
+
+    info!("Radio is running on `http://localhost:{}`", port);
+
+    server
+        .run()
+        .await
+        .with_context(|| "cold not start webserver")?;
+
+    info!("Radio is shutting down...");
 
     Ok(())
 }
