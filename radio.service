@@ -1,0 +1,16 @@
+[Unit]
+Description=An internet radio written in Rust
+Documentation=https://github.com/MikMuellerDev/radio
+Wants=network-online.target
+After=network.target network-online.target
+
+[Service]
+Type=simple
+User=pi
+Group=pi
+WorkingDirectory=/usr/bin/radio
+ExecStart=/usr/bin/radio/radio
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
