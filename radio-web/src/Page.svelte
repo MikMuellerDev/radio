@@ -39,7 +39,7 @@
 </TopAppBar>
 
 <AutoAdjust {topAppBar}>
-    <Drawer variant="modal" fixed={true} bind:open>
+    <Drawer variant="modal" fixed={true} bind:open style="background-color: var(--clr-height-0-3);">
         <Header>
             <br />
             <Title>Radio</Title>

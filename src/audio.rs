@@ -191,20 +191,23 @@ impl Player {
     }
 
     pub fn set_volume(&mut self, volume_percent: u8) {
-        self.player_tx
-            .send(PlayerMsg::SetVolume(volume_percent))
-            .unwrap();
+        if self.player_rx.is_none() {
+            self.player_tx
+                .send(PlayerMsg::SetVolume(volume_percent))
+                .expect("when the player is running, there must be a receiver")
+        }
         self.volume_percent = volume_percent
     }
 
     pub async fn set_output_device(&mut self, idx: usize) -> Result<(), Error> {
-        self.alsa_device_idx = idx;
+        debug!("Changing output device to `{idx}`, Restarting player...");
 
-        debug!("Restarting player...");
+        self.alsa_device_idx = idx;
         if let Some(station) = self.curr_station.clone() {
             self.stop(true)?;
             self.play(station.clone()).await?
         };
+
         debug!("Player restarted successfully");
 
         Ok(())
@@ -219,7 +222,7 @@ impl Player {
                 self.stop(true)?;
                 self.player_rx
                     .take()
-                    .expect("the player was just stopped, there must be a receiver now")
+                    .expect("the player was just stopped, there is a receiver now")
             }
         };
 
@@ -230,34 +233,49 @@ impl Player {
         let player_volume = self.volume_percent;
         let device_idx = self.alsa_device_idx;
 
-        thread::spawn(
-            move || match create_sink(thread_url, player_volume, device_idx) {
+        thread::spawn(move || loop {
+            match create_sink(thread_url.clone(), player_volume, device_idx) {
                 Ok((sink, _output_handle)) => {
-                    outcome_tx.send(Ok(()))?;
+                    match outcome_tx.send(Ok(())) {
+                        Ok(_) => trace!("Sent stream outcome to receiver"),
+                        Err(_) => trace!("Stream outcome receiver disconnected"),
+                    }
                     loop {
                         if sink.empty() {
-                            debug!("Sink is empty, playback has ended: sending signal");
-                            player_stopped_tx
-                                .send(())
-                                .expect("the receiver is always valid");
-                            return Ok(());
+                            match station.auto_restart {
+                                // if the station supports auto restart, do not quit here
+                                true => {
+                                    debug!("Sink is empty, playback has ended: restarting stream...");
+                                    break;
+                                }
+                                // otherwise, send a signal and terminate this thread
+                                false => {
+                                    debug!("Sink is empty, playback has ended: sending signal...");
+                                    player_stopped_tx
+                                        .send(())
+                                        .expect("the receiver is always valid");
+                                    return;
+                                }
+                            }
                         }
                         match player_rx.try_recv() {
                             Ok(PlayerMsg::Stop) | Err(TryRecvError::Disconnected) => {
                                 debug!("Player is terminating...");
-                                return Ok(());
+                                return;
                             }
                             Ok(PlayerMsg::SetVolume(volume)) => {
-                                debug!("Set player volume to {volume}%");
+                                debug!("Set running sink volume to {volume}%");
                                 sink.set_volume(volume as f32 / 100.0)
                             }
                             Err(TryRecvError::Empty) => thread::sleep(Duration::from_millis(500)),
-                        }
+                        };
                     }
                 }
-                Err(err) => outcome_tx.send(Err(err)),
-            },
-        );
+                Err(err) => outcome_tx
+                    .send(Err(err))
+                    .expect("can always send to outcome receiver"),
+            };
+        });
 
         for i in 0..=STREAM_CONNECT_TIMEOUT_SECS * 2 {
             time::sleep(Duration::from_millis(500)).await;
@@ -279,7 +297,9 @@ impl Player {
                 Err(TryRecvError::Empty) => {
                     debug!("Waiting for stream connection...")
                 }
-                Err(TryRecvError::Disconnected) => unreachable!("this cannot happen"),
+                Err(TryRecvError::Disconnected) => unreachable!(
+                    "this cannot happen because the sender lives as long as the running player"
+                ),
             }
         }
 
@@ -292,9 +312,10 @@ impl Player {
             true => {
                 if send_signal {
                     // terminate the player
-                    self.player_tx
-                        .send(PlayerMsg::Stop)
-                        .expect("can always send the termination signal");
+                    match self.player_tx.send(PlayerMsg::Stop) {
+                        Ok(_) => trace!("Sent termination signal to player"),
+                        Err(_) => trace!("Player quit before termination signal could be sent"),
+                    }
                 }
 
                 // place a new set of channels into the player

@@ -5,10 +5,13 @@
     import Progress from '../../components/Progress.svelte'
     import { createSnackbar } from '../../global'
     import Kitchen from '@smui/snackbar/kitchen'
+    import TopAppBar, { Row, Section, Title, AutoAdjust } from '@smui/top-app-bar'
 
     let username = ''
     let password = ''
     let loading = false
+    let invalid = false
+    let topAppBar: TopAppBar
 
     let kitchen: KitchenComponentDev
     $createSnackbar = (message: string) => {
@@ -31,6 +34,8 @@
                     window.location.href = '/'
                     return
                 case 403:
+                    invalid = true
+                    setTimeout(() => (invalid = false), 1000)
                     throw 'Invalid username or password'
             }
         } catch (err) {
@@ -41,28 +46,54 @@
     }
 </script>
 
-<div id="container">
+<TopAppBar bind:this={topAppBar} variant="standard">
+    <Row>
+        <Section>
+            <Title>Radio</Title>
+        </Section>
+    </Row>
+</TopAppBar>
+
+<AutoAdjust {topAppBar}>
     <Progress bind:loading />
-    <Textfield variant="filled" bind:value={username} label="Username" />
-    <Textfield variant="filled" bind:value={password} type="password" label="Password" />
-    <Button on:click={login} variant="raised">Login</Button>
-</div>
+    <div id="container">
+        <div id="container__login">
+            <div id="container__login__textfields">
+                <Textfield bind:value={username} bind:invalid label="Username" />
+                <Textfield bind:value={password} bind:invalid type="password" label="Password" />
+            </div>
+            <Button on:click={login} variant="raised">Login</Button>
+        </div>
+    </div>
+</AutoAdjust>
+
 <Kitchen bind:this={kitchen} dismiss$class="material-icons" />
 
 <style lang="scss">
+    @use '../../mixins' as *;
+
     #container {
-        background-color: var(--clr-height-0-6);
-
-        position: absolute;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-
         display: flex;
-        flex-direction: column;
+        justify-content: center;
         align-items: center;
-        gap: 1rem;
-        padding: 1rem;
-        border-radius: 0.3rem;
+        height: calc(100vh /* navbar */ - 64px);
+
+        &__login {
+            background-color: var(--clr-height-0-6);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 1rem;
+            padding: 1.5rem 1.7rem;
+            border-radius: 0.3rem;
+
+            &__textfields {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                margin-bottom: 1rem;
+                gap: 1rem;
+            }
+        }
     }
 </style>

@@ -25,6 +25,22 @@ impl Settings {
     }
 
     pub(crate) fn write(&self, path: &Path) -> Result<()> {
+        match self.write_to_file(path) {
+            Ok(_) => {
+                trace!("Successfully written to settings file");
+                Ok(())
+            }
+            Err(err) => {
+                error!(
+                    "Could not write to settings file at `{}`: {err}",
+                    path.to_string_lossy()
+                );
+                Err(err)
+            }
+        }
+    }
+
+    fn write_to_file(&self, path: &Path) -> Result<()> {
         let mut file = File::create(path)?;
         file.write_all(serde_json::to_string_pretty(self).unwrap().as_bytes())?;
         Ok(())

@@ -29,6 +29,7 @@ pub struct Station {
     pub description: String,
     pub url: String,
     pub image_file: PathBuf,
+    pub auto_restart: bool,
 }
 
 impl Config {
@@ -78,21 +79,25 @@ pub fn read(path: &Path) -> Result<Option<Config>> {
             // create the config file using a default
             fs::create_dir_all(path.parent().unwrap())?;
             let mut file = File::create(path)?;
+
             /* let config = Config {
-                           port: 8083,
-                           session_key: "my_secret_session_key_over_64_characters".to_string(),
-                           users: vec![User {
-                               username: "admin".to_string(),
-                               password: "secret".to_string(),
-                           }],
-                           stations: vec![Station {
-                               url: "https://example.com/stream".to_string(),
-                               name: "Example Radio".to_string(),
-                               image_path: PathBuf::from("/opt/radio/assets/example.png"),
-                           }],
-                       };
-                       file.write_all(toml::to_string(&config).unwrap().as_bytes());
-            */
+                port: 8083,
+                session_key: "my_secret_session_key_which_must_be_over_64_characters_in_length".to_string(),
+                users: vec![User {
+                    username: "admin".to_string(),
+                    password: "secret".to_string(),
+                }],
+                stations: vec![Station {
+                    id: "example".to_string(),
+                    name: "Example Radio".to_string(),
+                    description: "This is an example radio".to_string(),
+                    url: "https://example.com/stream".to_string(),
+                    image_file: PathBuf::from("example.png"),
+                    auto_restart: true,
+                }],
+            };
+            file.write_all(toml::to_string(&config).unwrap().as_bytes()); */
+
             file.write_all(include_bytes!("default_config.toml"))?;
             Ok(None)
         }

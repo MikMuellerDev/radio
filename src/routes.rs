@@ -180,13 +180,10 @@ pub(crate) async fn post_volume(
 
     match settings.write(&PathBuf::from(SETTINGS_PATH)) {
         Ok(_) => HttpResponse::Ok().json(GenericResponse::ok("successfully set volume")),
-        Err(err) => {
-            error!("Could not write to settings file at `{SETTINGS_PATH}`: {err}");
-            HttpResponse::InternalServerError().json(GenericResponse::err(
-                "could not set volume",
-                "could not write to settings file".to_string(),
-            ))
-        }
+        Err(_) => HttpResponse::InternalServerError().json(GenericResponse::err(
+            "could not set volume",
+            "could not write to settings file".to_string(),
+        )),
     }
 }
 
@@ -227,8 +224,7 @@ pub(crate) async fn post_device(
             let settings = &mut data.settings.lock().await;
             settings.alsa_device_index = request.index;
 
-            if let Err(err) = settings.write(&PathBuf::from(SETTINGS_PATH)) {
-                error!("Could not write to settings file at `{SETTINGS_PATH}`: {err}");
+            if settings.write(&PathBuf::from(SETTINGS_PATH)).is_err() {
                 return HttpResponse::InternalServerError().json(GenericResponse::err(
                     "could not change output device",
                     "could not write to settings file".to_string(),

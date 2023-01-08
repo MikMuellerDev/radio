@@ -13,6 +13,7 @@
     let selectedStation: string = undefined
     let stations: Station[] = []
     let currStation: Station = undefined
+
     $: currStation = stations.find(s => s.id == selectedStation)
 
     let loading = false
@@ -138,6 +139,9 @@
 <Page pageId="dash">
     <div id="container">
         <div id="container__selection">
+            <div id="container__selection__header">
+                <span class="text-hint">Select Station</span>
+            </div>
             <List twoLine avatarList singleSelection>
                 {#each stations as station}
                     <Item
@@ -193,54 +197,81 @@
         </div>
 
         <div id="container__right">
-            {#if currStation !== undefined}
-                <div id="container__right__banner" class="mdc-elevation--z3">
-                    <div id="container__right__banner__header">
-                        <span class="text-hint">Currently Playing</span>
+            <div id="container__right__banner" class="mdc-elevation--z3">
+                <div id="container__right__banner__header">
+                    <span class="text-hint">Currently Playing</span>
+                    {#if currStation !== undefined}
                         <IconButton href={currStation.url} target="_blank" class="material-icons"
                             >open_in_new</IconButton
                         >
-                    </div>
+                    {/if}
+                </div>
 
-                    <div id="container__right__banner__content">
-                        <div
-                            id="container__right__banner__img-div"
-                            class="mdc-elevation--z5"
-                            style={`background-image: url("/images/${currStation.image_file}")`}
-                        >
-                            <div id="container__right__banner__img-div__inner">
+                <div id="container__right__banner__content">
+                    <div
+                        id="container__right__banner__img-div"
+                        class="mdc-elevation--z5"
+                        class:loading
+                        style={currStation === undefined
+                            ? ''
+                            : `background-image: url("/images/${currStation.image_file}")`}
+                    >
+                        <div id="container__right__banner__img-div__inner">
+                            {#if currStation !== undefined}
                                 <img
                                     id="container__right__banner__img-div__inner__img"
                                     alt="Logo of the current station"
                                     src={`/images/${currStation.image_file}`}
                                 />
-                            </div>
-                        </div>
-
-                        <div id="container__right__banner__texts">
-                            <h6>{currStation.name}</h6>
-                            <span class="text-hint">{currStation.description}</span>
+                            {:else}
+                                <i class="material-icons">volume_off</i>
+                            {/if}
                         </div>
                     </div>
+
+                    <div id="container__right__banner__texts">
+                        {#if currStation !== undefined}
+                            <h6 class:text-disabled={loading}>{currStation.name}</h6>
+                            <span class:text-disabled={loading} class="text-hint"
+                                >{currStation.description}</span
+                            >
+                        {:else}
+                            <h6 class:text-disabled={loading}>Off</h6>
+                            <span class:text-disabled={loading} class="text-hint"
+                                >Nothing is playing</span
+                            >
+                        {/if}
+                    </div>
                 </div>
-                <div id="container__right__volume">
-                    <FormField align="end" style="display: flex;">
-                        <Slider
-                            style="flex-grow: 1;"
-                            bind:value={volume}
-                            on:SMUISlider:change={setVolume}
-                        />
-                        <span
-                            slot="label"
-                            style="padding-right: 12px; width: max-content; display: block;"
-                        >
-                            Volume
-                        </span>
-                    </FormField>
+            </div>
+            <div id="container__right__volume">
+                <span class="text-hint">Volume Control</span>
+                <div id="container__right__volume__container">
+                    <div id="container__right__volume__container__left">
+                        <FormField align="end" style="display: flex;">
+                            <Slider
+                                style="flex-grow: 1;"
+                                bind:value={volume}
+                                on:SMUISlider:change={setVolume}
+                            />
+                        </FormField>
+                    </div>
+                    <div id="container__right__volume__container__right">
+                        <span class="text-hint">{volume}%</span>
+                        <i class="material-icons">
+                            {#if volume === 0}
+                                volume_off
+                            {:else if volume < 33}
+                                volume_mute
+                            {:else if volume < 66}
+                                volume_down
+                            {:else}
+                                volume_up
+                            {/if}
+                        </i>
+                    </div>
                 </div>
-            {:else}
-                <h4>Nothing Playing</h4>
-            {/if}
+            </div>
         </div>
     </div>
 </Page>
@@ -256,17 +287,33 @@
         display: flex;
         padding: 2rem 2.5rem;
         gap: 1rem;
+        height: calc(100vh /* navbar */ - 64px /* container padding */ - 4rem);
+
+        @include not-widescreen {
+            height: auto;
+            flex-direction: column;
+        }
 
         @include mobile {
-            flex-direction: column;
+            padding: 1rem 1.5rem;
         }
 
         &__selection {
             width: 60%;
+            height: 100%;
             background-color: var(--clr-height-0-3);
             border-radius: 0.3rem;
 
-            @include mobile {
+            &__header {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                padding-left: 2.5rem;
+                padding-top: 1rem;
+                height: 3rem;
+            }
+
+            @include not-widescreen {
                 width: 100%;
             }
         }
@@ -277,7 +324,7 @@
             flex-direction: column;
             gap: 1rem;
 
-            @include mobile {
+            @include not-widescreen {
                 width: 100%;
             }
 
@@ -292,6 +339,7 @@
                     padding-left: 2.5rem;
                     padding-right: 0.8rem;
                     padding-top: 1rem;
+                    height: 3rem;
                 }
 
                 &__content {
@@ -300,7 +348,7 @@
                     display: flex;
                     gap: 3rem;
 
-                    @include mobile {
+                    @include not-widescreen {
                         margin-top: 1rem;
                         gap: 2rem;
                         flex-direction: column;
@@ -313,11 +361,26 @@
                     height: 9rem;
                     background-position: center;
                     background-size: cover;
+                    transition-duration: 0.1s;
+                    transition-property: filter;
+
+                    &.loading {
+                        filter: grayscale(100);
+                    }
 
                     &__inner {
                         background-color: rgba($color: #ffffff, $alpha: 0.04);
                         width: 100%;
                         height: 100%;
+
+                        display: flex;
+                        justify-content: center;
+                        align-items: center;
+
+                        i {
+                            font-size: 5rem;
+                            text-align: center;
+                        }
 
                         &__img {
                             width: 100%;
@@ -329,7 +392,7 @@
                 }
 
                 &__texts {
-                    @include mobile {
+                    @include not-widescreen {
                         text-align: center;
                     }
 
@@ -343,6 +406,42 @@
             }
 
             &__volume {
+                background-color: var(--clr-height-0-3);
+                border-radius: 0.3rem;
+                padding: 2rem 2.5rem;
+
+                @include mobile {
+                    padding: 1rem 1.5rem;
+                }
+
+                &__container {
+                    display: flex;
+                    align-items: center;
+
+                    @include mobile {
+                        flex-direction: column;
+                        align-items: flex-start;
+                    }
+
+                    &__left {
+                        width: 100%;
+                    }
+
+                    &__right {
+                        display: flex;
+                        align-items: center;
+                        padding-left: 1rem;
+
+                        i {
+                            color: var(--clr-text-hint);
+                            padding-left: 1rem;
+                        }
+
+                        span {
+                            min-width: 2.1rem;
+                        }
+                    }
+                }
             }
         }
     }

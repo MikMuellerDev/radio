@@ -1,13 +1,14 @@
-port = 8080
-session_key = "my_super_secret_session_key_which_must_be_over_64_characters_in_length"
+port = 8083
+session_key = "my_secret_session_key_which_must_be_over_64_characters_in_length"
 
 [[users]]
 username = "admin"
 password = "secret"
 
 [[stations]]
-id = "example_unique_id"
+id = "example"
 name = "Example Radio"
-description = "This fictional radio station serves as an example."
+description = "This is an example radio"
 url = "https://example.com/stream"
 image_file = "example.png"
+auto_restart = true
