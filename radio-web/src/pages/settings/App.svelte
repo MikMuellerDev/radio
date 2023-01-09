@@ -63,38 +63,70 @@
 </script>
 
 <Page pageId="settings">
-    <Progress bind:loading />
-
     <div id="device">
-        <h6>Output Devices</h6>
-        <ul>
-            {#each outputDevices as device}
-                <li>
-                    <code>
-                        {device}
-                    </code>
-                </li>
-            {/each}
-        </ul>
-
-        <Select bind:value={selectedOutputDevice} label="Select device">
-            {#each outputDevices as device}
-                <Option value={device}>{device}</Option>
-            {/each}
-        </Select>
-        <Button
-            on:click={postOutputDevice}
-            disabled={currentOutputDevice === selectedOutputDevice || loading}>Save</Button
-        >
+        <div id="device__left">
+            <div id="device__left__header">
+                <span class="text-hint">Output Devices</span>
+                <Progress bind:loading type="circular" />
+            </div>
+            <ul>
+                {#each outputDevices as device}
+                    <li>
+                        <code>
+                            {device}
+                        </code>
+                    </li>
+                {/each}
+            </ul>
+        </div>
+        <div id="device__right">
+            <Select bind:value={selectedOutputDevice} label="Select device">
+                {#each outputDevices as device}
+                    <Option value={device}>{device}</Option>
+                {/each}
+            </Select>
+            <Button
+                on:click={postOutputDevice}
+                disabled={currentOutputDevice === selectedOutputDevice || loading}>Save</Button
+            >
+        </div>
     </div>
 </Page>
 
 <style lang="scss">
+    @use '../../mixins' as *;
+
     #device {
         margin: 1rem 1.5rem;
+        background-color: var(--clr-height-0-3);
+        border-radius: 0.3rem;
+        padding: 1rem 1.5rem;
+        display: flex;
+        justify-content: space-between;
+        box-sizing: border-box;
+        height: calc(100vh - 64px - 2rem);
 
-        h6 {
-            margin: 0;
+        @include mobile {
+            flex-direction: column;
+        }
+
+        &__left {
+            &__header {
+                display: flex;
+                align-items: center;
+                gap: 1rem;
+            }
+
+            @include mobile {
+                ul {
+                    max-width: 60vw;
+                    overflow-x: scroll;
+
+                    li > code {
+                        font-size: 0.8rem;
+                    }
+                }
+            }
         }
     }
 </style>
