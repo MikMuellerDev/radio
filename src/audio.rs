@@ -119,10 +119,13 @@ impl From<DeviceNameError> for Error {
     }
 }
 
-pub(crate) fn list_host_devices() -> Result<Vec<String>, DeviceNameError> {
+pub(crate) fn list_host_devices() -> Result<Vec<String>, Error> {
     let host = cpal::default_host();
-    let devices = host.output_devices().unwrap();
-    devices.into_iter().map(|dev| dev.name()).collect()
+    let devices = host.output_devices()?;
+    devices
+        .into_iter()
+        .map(|dev| dev.name().map_err(Error::CPALDeviceName))
+        .collect()
 }
 
 pub(crate) fn default_device_idx() -> Result<usize, Error> {
@@ -260,9 +263,9 @@ impl Player {
                         };
                     }
                 }
-                Err(err) => outcome_tx
-                    .send(Err(err))
-                    .expect("can always send to outcome receiver"),
+                Err(err) => {
+                    let _ = outcome_tx.send(Err(err));
+                }
             };
         });
 
