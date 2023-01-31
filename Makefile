@@ -3,12 +3,19 @@ VERSION = 0.1.0
 BUILD_OUTPUT_DIR = radio-$(VERSION)
 
 # For cross-compilation to ARM
-cargo-build-arm:
+cargo-build-armhf:
 	docker run -it \
 	-v $(DIR)/target:/build \
 	-v `pwd`:/root/project \
 	radio-cross \
 	cargo build --release --target arm-unknown-linux-gnueabihf
+
+cargo-build-armel:
+	docker run -it \
+	-v $(DIR)/target:/build \
+	-v `pwd`:/root/project \
+	radio-cross \
+	cargo build --release --target arm-unknown-linux-gnueabi
 
 # For cross-compilation to X86_64 Musl
 cargo-build-x64:
@@ -18,7 +25,7 @@ cargo-build-x64:
 	radio-cross \
 	cargo build --release --target x86_64-unknown-linux-gnu
 
-build-docker-cargo-arm:
+build-docker-cargo:
 	docker build . -t radio-cross:latest
 
 # For building the UI
@@ -29,9 +36,9 @@ build-web:
 # TODO: unify these build processes
 
 # For building distributable archive files
-build-archives: build-archive-x64 build-archive-arm
+build-archives: build-archive-x64 build-archive-armhf build-archive-armel
 
-build-archive-arm: build-web cargo-build-arm
+build-archive-armhf: build-web cargo-build-armhf
 	mkdir -p ./$(BUILD_OUTPUT_DIR)/radio-web
 	mkdir ./$(BUILD_OUTPUT_DIR)/images
 	cp ./images/example.png ./$(BUILD_OUTPUT_DIR)/images/
@@ -42,6 +49,19 @@ build-archive-arm: build-web cargo-build-arm
 	cp ./target/arm-unknown-linux-gnueabihf/release/radio ./$(BUILD_OUTPUT_DIR)/
 	tar -cvzf dist/radio-$(VERSION)-arm-unknown-linux-gnueabihf.tar.gz ./$(BUILD_OUTPUT_DIR)/
 	rm -rf $(BUILD_OUTPUT_DIR)
+
+build-archive-armel: build-web cargo-build-armel
+	mkdir -p ./$(BUILD_OUTPUT_DIR)/radio-web
+	mkdir ./$(BUILD_OUTPUT_DIR)/images
+	cp ./images/example.png ./$(BUILD_OUTPUT_DIR)/images/
+	cp ./radio.service ./$(BUILD_OUTPUT_DIR)/
+	cp ./install.sh ./$(BUILD_OUTPUT_DIR)/
+	mkdir -p dist
+	cp -r ./radio-web/dist/ ./$(BUILD_OUTPUT_DIR)/radio-web/
+	cp ./target/arm-unknown-linux-gnueabi/release/radio ./$(BUILD_OUTPUT_DIR)/
+	tar -cvzf dist/radio-$(VERSION)-arm-unknown-linux-gnueabi.tar.gz ./$(BUILD_OUTPUT_DIR)/
+	rm -rf $(BUILD_OUTPUT_DIR)
+
 
 build-archive-x64: build-web cargo-build-x64
 	mkdir -p ./$(BUILD_OUTPUT_DIR)/radio-web
