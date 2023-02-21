@@ -26,3 +26,4 @@ reqwest = { version = "0.11.13", default-features = false, features = ["rustls-t
 rodio = { version = "0.16.0" }
 rustls = { version = "0.20.7" }
 serde_json = "1.0.91"
+clap = { version = "4.0.32", features = ["derive"] }

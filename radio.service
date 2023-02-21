@@ -9,7 +9,7 @@ Type=simple
 User=PLACEHOLDER
 Group=PLACEHOLDER
 WorkingDirectory=/usr/bin/radio
-ExecStart=/usr/bin/radio/radio
+ExecStart=/usr/bin/radio/radio run
 Restart=always
 
 [Install]

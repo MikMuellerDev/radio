@@ -9,18 +9,23 @@ use actix_web::{
     App, HttpServer,
 };
 use anyhow::Context;
+use clap::Parser;
 use config::Config;
 use env_logger::Env;
 use settings::Settings;
 use tokio::sync::Mutex;
 
 mod audio;
+mod cli;
 mod config;
 mod decoder;
 mod routes;
 mod settings;
 
-use crate::audio::Player;
+use crate::{
+    audio::Player,
+    cli::{Args, Command},
+};
 
 #[macro_use]
 extern crate log;
@@ -36,33 +41,67 @@ const SETTINGS_PATH: &str = "./settings.toml";
 
 #[actix_web::main]
 async fn main() -> anyhow::Result<()> {
+    let args = Args::parse();
     env_logger::Builder::from_env(Env::default().default_filter_or("info")).init();
+
+    let config_path = match args.config_path {
+        Some(path) => PathBuf::from(path),
+        None => PathBuf::from(CONFIG_PATH),
+    };
 
     let settings = settings::read(&PathBuf::from(SETTINGS_PATH))
         .with_context(|| format!("could not read or create settings file at `{SETTINGS_PATH}`"))?;
 
-    let config = match config::read(&PathBuf::from(CONFIG_PATH))
-        .with_context(|| format!("could not read or create config file at `{CONFIG_PATH}`"))?
-    {
+    let config = match config::read(&config_path).with_context(|| {
+        format!(
+            "could not read or create config file at `{}`",
+            config_path.to_string_lossy()
+        )
+    })? {
         Some(config) => {
-            info!("Found existing config file at `{CONFIG_PATH}`");
+            info!(
+                "Found existing config file at `{}`",
+                config_path.to_string_lossy()
+            );
             config
         }
         None => {
-            info!("Created a new configuration file at `{CONFIG_PATH}`");
-            warn!("Canceling startup due to missing configuration");
+            info!(
+                "Created a new configuration file at `{}`",
+                config_path.to_string_lossy()
+            );
+            if args.subcommand == Command::Files {
+                warn!("Canceling startup due to missing configuration");
+            }
             return Ok(());
         }
     };
 
+    if args.subcommand != Command::Run {
+        return Ok(());
+    }
+
     let key = Key::from(config.session_key.as_bytes());
     let port = config.port;
 
+    let mut player = Player::new(settings.volume_percent, settings.alsa_device_index)?;
+
+    match config.stations.iter().find(|s| s.auto_start) {
+        Some(station) => {
+            info!("Starting auto start stream with ID `{}`...", station.id);
+            player
+                .play(station.clone())
+                .await
+                .with_context(|| "could not start auto start stream")?;
+            info!("Successfully started stream `{}` as it is marked as auto start", station.id);
+        }
+        None => {
+            debug!("No stream is marked as auto start, continuing normal startup...")
+        }
+    }
+
     let data = Data::new(State {
-        player: Mutex::new(Player::new(
-            settings.volume_percent,
-            settings.alsa_device_index,
-        )?),
+        player: Mutex::new(player),
         config,
         settings: Mutex::new(settings),
     });

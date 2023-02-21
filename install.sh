@@ -24,7 +24,7 @@ sudo chown -R "$USER":"$USER" /usr/bin/radio
 
 OLD_DIR=$(pwd)
 cd /usr/bin/radio/ || exit 1
-./radio
+./radio -c /etc/radio/config.toml files
 cd "$OLD_DIR" || exit 1
 
 echo "Installation succeeded"
