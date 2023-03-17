@@ -27,7 +27,7 @@ pub enum PlayerMsg {
     SetVolume(u8),
 }
 
-const STREAM_CONNECT_TIMEOUT_SECS: u8 = 5;
+const STREAM_CONNECT_TIMEOUT_SECS: u8 = 10;
 const VOLUME_TRANSITION_STEP_DELAY_MS: u64 = 12;
 
 pub struct Player {
