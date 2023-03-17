@@ -52,10 +52,12 @@ impl Config {
                 bail!("duplicate station ID `{} ", station.id)
             }
 
-            // validate that only one station is marked as `auto_start`
-            match auto_start_id {
+            if station.auto_start {
+                // validate that only one station is marked as `auto_start`
+                match auto_start_id {
                 Some(old) => bail!("station `{}` cannot be `auto_start`: the station `{old}` is already marked as `auto_start`", station.id),
                 None =>  auto_start_id = Some(station.id.to_string()),
+            }
             }
 
             // validate image of the station
