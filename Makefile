@@ -1,5 +1,5 @@
 DIR := ${CURDIR}
-VERSION = 0.1.0
+VERSION = 0.1.1
 BUILD_OUTPUT_DIR = radio-$(VERSION)
 
 # For cross-compilation to ARM
