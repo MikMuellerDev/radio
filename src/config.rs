@@ -30,6 +30,7 @@ pub struct Station {
     pub url: String,
     pub image_file: PathBuf,
     pub auto_restart: bool,
+    pub auto_start: bool,
 }
 
 impl Config {
@@ -43,10 +44,21 @@ impl Config {
         }
 
         let mut station_ids = HashSet::new();
+        let mut auto_start_id = None;
+
         for station in &self.stations {
+            // check if station ID is unique
             if !station_ids.insert(&station.id) {
                 bail!("duplicate station ID `{} ", station.id)
             }
+
+            // validate that only one station is marked as `auto_start`
+            match auto_start_id {
+                Some(old) => bail!("station `{}` cannot be `auto_start`: the station `{old}` is already marked as `auto_start`", station.id),
+                None =>  auto_start_id = Some(station.id.to_string()),
+            }
+
+            // validate image of the station
             let path = PathBuf::from("./images").join(&station.image_file);
             if !path.exists() {
                 bail!(
