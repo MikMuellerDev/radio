@@ -128,6 +128,7 @@ async fn main() -> anyhow::Result<()> {
             .service(routes::get_status)
             .service(routes::get_stations)
             .service(routes::post_play)
+            .service(routes::post_play_url)
             .service(routes::post_stop)
             .service(routes::post_volume)
             .service(routes::get_devices)

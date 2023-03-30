@@ -2,6 +2,7 @@ use std::path::PathBuf;
 
 use crate::{
     audio::{self, Error as AudioError},
+    config::Station,
     SETTINGS_PATH,
 };
 use actix_files::NamedFile;
@@ -25,6 +26,11 @@ pub(crate) struct LoginReq {
 pub(crate) struct PlayReq {
     #[serde(rename = "stationId")]
     station_id: String,
+}
+
+#[derive(Deserialize)]
+pub(crate) struct UrlPlayReq {
+    url: String,
 }
 
 #[derive(Deserialize)]
@@ -124,6 +130,34 @@ pub(crate) async fn get_status(data: Data<State>) -> HttpResponse {
 #[get("/api/stations")]
 pub(crate) async fn get_stations(data: Data<State>) -> HttpResponse {
     HttpResponse::Ok().json(&data.config.stations)
+}
+
+#[post("/api/url")]
+pub(crate) async fn post_play_url(
+    data: Data<State>,
+    request: Json<UrlPlayReq>,
+    _user: Identity,
+) -> HttpResponse {
+    let mut player = data.player.lock().await;
+
+    match player
+        .play(Station {
+            id: "url".to_string(),
+            name: "URL".to_string(),
+            description: "A custom URL".to_string(),
+            url: request.url.to_string(),
+            image_file: PathBuf::from(""),
+            auto_restart: true,
+            auto_start: false,
+        })
+        .await
+    {
+        Ok(_) => HttpResponse::Ok().json(GenericResponse::ok("started playback")),
+        Err(err) => HttpResponse::ServiceUnavailable().json(GenericResponse::err(
+            "could not start playback",
+            err.to_string(),
+        )),
+    }
 }
 
 #[post("/api/play")]

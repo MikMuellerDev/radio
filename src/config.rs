@@ -47,6 +47,11 @@ impl Config {
         let mut auto_start_id = None;
 
         for station in &self.stations {
+            // check if station ID is `url`
+            if station.id == "url" {
+                bail!("station ID cannot be `url`")
+            }
+
             // check if station ID is unique
             if !station_ids.insert(&station.id) {
                 bail!("duplicate station ID `{} ", station.id)

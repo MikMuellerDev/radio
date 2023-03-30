@@ -158,28 +158,35 @@
                             : `background-image: url("/images/${currStation.image_file}")`}
                     >
                         <div id="container__other__banner__img-div__inner">
-                            {#if currStation !== undefined}
+                            {#if currStation === undefined}
+                                <i class="material-icons">language</i>
+                            {:else if currStation === null}
+                                <i class="material-icons">volume_off</i>
+                            {:else}
                                 <img
                                     id="container__other__banner__img-div__inner__img"
                                     alt="Logo of the current station"
                                     src={`/images/${currStation.image_file}`}
                                 />
-                            {:else}
-                                <i class="material-icons">volume_off</i>
                             {/if}
                         </div>
                     </div>
 
                     <div id="container__other__banner__texts">
-                        {#if currStation !== undefined}
-                            <h6 class:text-disabled={loading}>{currStation.name}</h6>
+                        {#if currStation === undefined || selectedStation === 'url'}
+                            <h6 class:text-disabled={loading}>URL</h6>
                             <span class:text-disabled={loading} class="text-hint"
-                                >{currStation.description}</span
+                                >Playing a custom URL.</span
                             >
-                        {:else}
+                        {:else if currStation === null}
                             <h6 class:text-disabled={loading}>Off</h6>
                             <span class:text-disabled={loading} class="text-hint"
                                 >Nothing is playing</span
+                            >
+                        {:else}
+                            <h6 class:text-disabled={loading}>{currStation.name}</h6>
+                            <span class:text-disabled={loading} class="text-hint"
+                                >{currStation.description}</span
                             >
                         {/if}
                     </div>
@@ -219,7 +226,7 @@
                 <span class="text-hint">Select Station</span>
             </div>
             <List twoLine avatarList singleSelection>
-                {#each stations as station}
+                {#each stations.filter(station => station.id !== 'url') as station}
                     <Item
                         on:SMUI:action={() => {
                             if (selectedStation !== station.id) {
@@ -231,12 +238,14 @@
                         <Graphic>
                             {#if loading && pendingStationId === station.id}
                                 <Progress bind:loading type="circular" />
-                            {:else}
-                                <img
-                                    class="station-image"
-                                    src={`/images/${station.image_file}`}
-                                    alt="Logo of the station"
-                                />
+                            {:else if station.id !== 'url'}
+                                {#if station.image_file !== null}
+                                    <img
+                                        class="station-image"
+                                        src={`/images/${station.image_file}`}
+                                        alt="Logo of the station"
+                                    />
+                                {/if}
                             {/if}
                         </Graphic>
                         <Text>
@@ -266,6 +275,21 @@
                         <Text>
                             <PrimaryText>Off</PrimaryText>
                             <SecondaryText>Play nothing</SecondaryText>
+                        </Text>
+                    </Item>
+                {/if}
+                {#if selectedStation === 'url'}
+                    <Item selected={true}>
+                        <Graphic>
+                            {#if loading && pendingStationId === null}
+                                <Progress bind:loading type="circular" />
+                            {:else}
+                                <Icon class="material-icons">language</Icon>
+                            {/if}
+                        </Graphic>
+                        <Text>
+                            <PrimaryText>URL</PrimaryText>
+                            <SecondaryText>A custom URL</SecondaryText>
                         </Text>
                     </Item>
                 {/if}
