@@ -2,6 +2,10 @@ DIR := ${CURDIR}
 VERSION = 0.2.0
 BUILD_OUTPUT_DIR = radio-$(VERSION)
 
+.PHONY: cargo-build-armhf cargo-build-armel cargo-build-x64 build-docker-cargo \
+		build-web build-archives build-archive-armhf build-archive-armel \
+		build-archive-x64 gh-release version clean
+
 # For cross-compilation to ARM
 cargo-build-armhf:
 	docker run -it \
@@ -75,6 +79,13 @@ build-archive-x64: build-web cargo-build-x64
 	tar -cvzf dist/radio-$(VERSION)-x86_64-unknown-linux-gnu.tar.gz ./$(BUILD_OUTPUT_DIR)
 	rm -rf $(BUILD_OUTPUT_DIR)
 
+
+# Publish the local release to Github releases
+gh-release:
+	gh release create v$(VERSION) ./dist/*.tar.gz -F ./docs/CHANGELOG.md -t 'radio v$(version)'
+
+version:
+	python3 update_version.py
 
 clean:
 	rm -rf $(BUILD_OUTPUT_DIR)
