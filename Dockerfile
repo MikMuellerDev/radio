@@ -2,6 +2,13 @@
 # Most of the configuration is taken from 'https://github.com/librespot-org/librespot/blob/dev/contrib/Dockerfile'
 FROM debian:stretch
 
+# Update stretch repositories
+RUN sed -i -e 's/deb.debian.org/archive.debian.org/g' \
+           -e 's|security.debian.org|archive.debian.org/|g' \
+           -e '/stretch-updates/d' /etc/apt/sources.list
+
+RUN apt-get update
+
 RUN dpkg --add-architecture armhf\
     && dpkg --add-architecture armel
 

@@ -83,7 +83,7 @@ release: clean build-archives gh-release
 
 # Publish the local release to Github releases
 gh-release:
-	gh release create v$(VERSION) ./dist/*.tar.gz -F ./docs/CHANGELOG.md -t 'radio v$(version)'
+	gh release create v$(VERSION) ./dist/*.tar.gz -F ./CHANGELOG.md -t 'radio v$(version)'
 
 version:
 	python3 update_version.py
