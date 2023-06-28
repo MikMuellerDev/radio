@@ -1,2 +1,15 @@
 # Radio
-A headless music player which aims to replace RadiGo
+
+A headless music player which supports internet radio and streaming.
+
+## Getting Started
+
+## Screenshots
+
+### Dashboard
+
+![Dashboard](./screenshots/dash.png)
+
+### Login screen
+
+![Login](./screenshots/login.png)

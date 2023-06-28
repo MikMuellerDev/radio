@@ -4,7 +4,7 @@ BUILD_OUTPUT_DIR = radio-$(VERSION)
 
 .PHONY: cargo-build-armhf cargo-build-armel cargo-build-x64 build-docker-cargo \
 		build-web build-archives build-archive-armhf build-archive-armel \
-		build-archive-x64 gh-release version clean
+		build-archive-x64 release gh-release version clean
 
 # For cross-compilation to ARM
 cargo-build-armhf:
@@ -79,6 +79,7 @@ build-archive-x64: build-web cargo-build-x64
 	tar -cvzf dist/radio-$(VERSION)-x86_64-unknown-linux-gnu.tar.gz ./$(BUILD_OUTPUT_DIR)
 	rm -rf $(BUILD_OUTPUT_DIR)
 
+release: clean build-archives gh-release
 
 # Publish the local release to Github releases
 gh-release:
